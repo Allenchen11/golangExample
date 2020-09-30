@@ -26,6 +26,10 @@ type Award struct {
 }
 
 var db *sql.DB
+var (
+	coupon Coupon
+	award  Award
+)
 
 func main() {
 
@@ -37,7 +41,6 @@ func main() {
 
 	r := gin.Default()
 	r.POST("/lottery", func(c *gin.Context) {
-
 		r.Use(cors.Default())
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -52,10 +55,6 @@ func main() {
 			log.Println("select db error", err)
 			return
 		}
-		var (
-			coupon Coupon
-			award  Award
-		)
 
 		isValidCoupon := false
 		for couponRows.Next() {
