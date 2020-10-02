@@ -5,11 +5,14 @@ import (
 	"log"
 	"time"
 
+	_ "./models"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 )
 
+//Coupon is a coupon
 type Coupon struct {
 	CouponID           int       `json:"coupon_id"`
 	CouponSerialNumber string    `json:"coupon_serial_number"`
@@ -17,6 +20,7 @@ type Coupon struct {
 	CouponUpdateTime   time.Time `json:"coupon_update_time"`
 }
 
+//Award is a award
 type Award struct {
 	AwardID           int       `json:"award_id"`
 	AwardName         string    `json:"award_name"`
