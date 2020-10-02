@@ -38,8 +38,10 @@ func main() {
 		log.Println("conncet db error", err)
 		return
 	}
+	log.Println("conncet db success ! ")
 
 	r := gin.Default()
+
 	r.POST("/lottery", func(c *gin.Context) {
 		r.Use(cors.Default())
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -48,7 +50,7 @@ func main() {
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT")
 
 		serialNumber := c.PostForm("serialNumber")
-		log.Println("some user send awardNumber = ", serialNumber)
+		log.Println("some user send serialNumber = ", serialNumber)
 
 		couponRows, err := db.Query("select * from coupon where coupon_status = 0")
 		if err != nil {
@@ -61,7 +63,7 @@ func main() {
 			err = couponRows.Scan(&coupon.CouponID, &coupon.CouponSerialNumber, &coupon.CouponStatus, &coupon.CouponUpdateTime)
 			if coupon.CouponSerialNumber == serialNumber {
 
-				stmt, _ := db.Prepare("update coupon set coupon_status= ? where coupon_id= ?")
+				stmt, _ := db.Prepare("update coupon set coupon_status= ? ,coupon_update_time = now() where coupon_id= ?")
 
 				stmt.Exec("1", coupon.CouponID)
 				log.Println("serialNumber : ", serialNumber, " used update status to 1")
@@ -77,22 +79,15 @@ func main() {
 			awardNumber := "0"
 			awardName := ""
 
-			awardRows, err := db.Query("SELECT * FROM award ORDER BY RAND() LIMIT 1")
-			for awardRows.Next() {
-				err = awardRows.Scan(&award.AwardID, &award.AwardName, &award.AwardSerialNumber, &award.AwardStatus, &award.AwardUpdateTime)
-				if coupon.CouponSerialNumber == serialNumber {
-
-					stmt, _ := db.Prepare("update award set award_status= ? where award_id= ?")
-
-					stmt.Exec("1", award.AwardID)
-					awardName = award.AwardName
-					awardNumber = award.AwardSerialNumber
-					break
-				}
-				if err != nil {
-					log.Print(err.Error())
-				}
+			err := db.QueryRow("SELECT * FROM award where award_status='0' ORDER BY RAND() LIMIT 1").Scan(&award.AwardID, &award.AwardName, &award.AwardSerialNumber, &award.AwardStatus, &award.AwardUpdateTime)
+			if err != nil {
+				log.Print(err.Error())
 			}
+			stmt, _ := db.Prepare("update award set award_status= ? ,award_update_time = now() where award_id= ?")
+			stmt.Exec("1", award.AwardID)
+
+			awardName = award.AwardName
+			awardNumber = award.AwardSerialNumber
 
 			c.JSON(200, gin.H{
 				"awardNumber": awardNumber,
@@ -107,11 +102,11 @@ func main() {
 		}
 	})
 
-	r.Run(":8081")
+	r.Run(":8082")
 }
 
 func initDB() (err error) {
-	dsn := "frank:123456@tcp(localhost)/newdatabase?parseTime=true"
+	dsn := "frank:123456@tcp(localhost)/lottery?parseTime=true"
 	db, err = sql.Open("mysql", dsn)
 	if err != nil {
 		return err
